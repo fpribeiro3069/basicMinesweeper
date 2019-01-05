@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Properties;
 
 public class MainMenu extends JFrame {
     private JPanel pnlMenu;
@@ -15,10 +16,11 @@ public class MainMenu extends JFrame {
     private JSpinner spnWidth, spnHeight, spnNumMines;
     private JButton btnStart, btnHighScores, btnStartEasy, btnStartMedium, btnStartHard;
 
-    private ArrayList<Pontuacao> pontuations;
+    private ArrayList<Pontuation> pontuations;
 
     public MainMenu() {
-        this.setTitle("MineSweeper do Xico");
+
+        this.setTitle("Basic Minesweeper");
         this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(null);
         this.setSize(300, 310);
@@ -28,20 +30,21 @@ public class MainMenu extends JFrame {
             pontuations = getPontsFromFile();
         } catch (IOException e) {
             System.out.println("Problem getting pontuations from file!");
+            pontuations = new ArrayList<Pontuation>();
         }
 
         // region Component Initializations
         pnlMenu = new JPanel();
         lblWelcome = new JLabel("Welcome to MineSweeper!");
         lblDimensions = new JLabel("Width and Height:", SwingConstants.CENTER);
-        spnWidth = new JSpinner(new SpinnerNumberModel(10, 8, 30, 1));
+        spnWidth = new JSpinner(new SpinnerNumberModel(10, 7, 20, 1));
         JFormattedTextField txt = ((JSpinner.NumberEditor)spnWidth.getEditor()).getTextField();
         ((NumberFormatter) txt.getFormatter()).setAllowsInvalid(false);
-        spnHeight = new JSpinner(new SpinnerNumberModel(10, 8, 30, 1));
+        spnHeight = new JSpinner(new SpinnerNumberModel(10, 7, 20, 1));
         txt = ((JSpinner.NumberEditor) spnHeight.getEditor()).getTextField();
         ((NumberFormatter) txt.getFormatter()).setAllowsInvalid(false);
         lblNumMines = new JLabel("Number of mines:", SwingConstants.CENTER);
-        spnNumMines = new JSpinner(new SpinnerNumberModel(10, 10, 80, 5));
+        spnNumMines = new JSpinner(new SpinnerNumberModel(10, 8, 50, 5));
         txt = ((JSpinner.NumberEditor)spnNumMines.getEditor()).getTextField();
         ((NumberFormatter) txt.getFormatter()).setAllowsInvalid(false);
         btnStart = new JButton("Start");
@@ -94,6 +97,7 @@ public class MainMenu extends JFrame {
         pnlMenu.add(spnNumMines);
         pnlMenu.add(btnStart);
         pnlMenu.add(btnHighScores);
+        // TODO: Find alternative
         pnlMenu.add(new Label("------------------------------------------------------------"));
         pnlMenu.add(btnStartEasy);
         pnlMenu.add(btnStartMedium);
@@ -115,7 +119,7 @@ public class MainMenu extends JFrame {
 
             if(selected == btnStart) {
                 if((width*height) > numMines)
-                    game = new Game(menu, width, height, numMines);
+                    game = new Game(menu, height, width, numMines);
                 else {
                     JOptionPane.showMessageDialog(null,
                             "Number of mines can't exceed the number of places on the board!");
@@ -128,13 +132,13 @@ public class MainMenu extends JFrame {
                 return;
             }
             else if (selected == btnStartEasy) {
-                game = new Game(menu, 8, 8, 15);
+                game = new Game(menu, 8, 8, 10);
             }
             else if (selected == btnStartMedium) {
-                game = new Game(menu, 12, 12, 60);
+                game = new Game(menu, 16, 16, 40);
             }
             else if (selected == btnStartHard) {
-                game = new Game(menu, 16, 16, 99);
+                game = new Game(menu, 16, 30, 99);
             }
             else {
                 game = null;
@@ -150,17 +154,16 @@ public class MainMenu extends JFrame {
         }
     }
 
-    public void addCompletedTime(Pontuacao pont) {
+    public void addCompletedTime(Pontuation pont) {
         this.pontuations.add(pont);
     }
 
     private String showTop10() {
-        // TODO: Mostrar nomes também
         StringBuilder str = new StringBuilder();
         try {
-            Collections.sort(pontuations, new Comparator<Pontuacao>() {
+            Collections.sort(pontuations, new Comparator<Pontuation>() {
                 @Override
-                public int compare(Pontuacao o1, Pontuacao o2) {
+                public int compare(Pontuation o1, Pontuation o2) {
                     return Float.compare(o1.getTime(), o2.getTime());
                 }
             });
@@ -178,12 +181,12 @@ public class MainMenu extends JFrame {
         return str.toString();
     }
 
-    private ArrayList<Pontuacao> getPontsFromFile() throws IOException {
-        ArrayList<Pontuacao> pontuations = null;
+    private ArrayList<Pontuation> getPontsFromFile() throws IOException {
+        ArrayList<Pontuation> pontuations = null;
 
         File file = new File("minesweeper.data");
         if(file.createNewFile()) {
-            pontuations = new ArrayList<Pontuacao>();
+            pontuations = new ArrayList<Pontuation>();
             return pontuations;
         }
 
@@ -192,7 +195,8 @@ public class MainMenu extends JFrame {
             FileInputStream fos = new FileInputStream(file);
             ObjectInputStream oos = new ObjectInputStream(fos);
 
-            pontuations = (ArrayList<Pontuacao>) oos.readObject();
+            pontuations = (ArrayList<Pontuation>) oos.readObject();
+            Pontuation.setPLAYER_ID(oos.readLong());
 
             oos.close();
         } catch (ClassNotFoundException e) {
@@ -208,11 +212,12 @@ public class MainMenu extends JFrame {
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(pontuations);
+            oos.writeLong(Pontuation.getPLAYER_ID());
             oos.close();
         } catch (FileNotFoundException ex) {
-            System.out.println("Erro a criar ficheiro.");
+            System.out.println("Error creating file.");
         } catch (IOException ex) {
-            System.out.println("Erro a escrever para o ficheiro.");
+            System.out.println("Error writing to file.");
         }
     }
 

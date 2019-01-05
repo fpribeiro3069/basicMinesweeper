@@ -3,14 +3,13 @@ package GUI;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 
 public class Game extends JFrame {
     private JPanel pnlContainer;
     private JPanel pnlGame, pnlInfo;
-    private JButton[][] board;
+    private JButton[][] btnBoard;
     private JLabel lblMinas;
     private JLabel lblTimer;
     private Timer timer;
@@ -19,11 +18,13 @@ public class Game extends JFrame {
     long startTime;
     int width, height, numMines, numMinesSelected = 0;
     boolean[][] gameBoard;
+    ImageIcon mineIcon, flagIcon;
 
     public Game(MainMenu owner, int width, int height, int numMines) {
         this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        this.setTitle("MineSweeper do Xico");
+        this.setTitle("Basic Mineseeper");
         this.setSize(750, 750);
+        this.setResizable(false);
         this.setLocationRelativeTo(null);
         this.owner = owner;
 
@@ -32,13 +33,13 @@ public class Game extends JFrame {
         this.height = height;
         this.numMines = numMines;
 
-        generateBoard();
+        generateBoard(); // Create the buttons, and the array of booleans with mines already distributed
         pnlContainer = new JPanel(new BorderLayout());
         pnlGame = new JPanel(new GridLayout(width, height));
         pnlInfo = new JPanel();
         lblMinas = new JLabel("0/" + numMines + " Mines");
-        // TODO: Time Elapsed
-        lblTimer = new JLabel("Time Elapsed: ");
+        // TODO: Time Elapsed ( Don't forget to add to panel)
+        //lblTimer = new JLabel("Time Elapsed: ");
 
 
         this.addWindowListener(new WindowAdapter() {
@@ -47,9 +48,29 @@ public class Game extends JFrame {
                 e.getWindow().dispose();
                 owner.setVisible(true);
             }
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+                super.windowOpened(e);
+                // When the program has loaded the components, create the ImageIcons
+                try {
+                    mineIcon = new ImageIcon("images/mine.png");
+                    flagIcon = new ImageIcon("images/flag.png");
+                    Image img = mineIcon.getImage() ;
+                    Image newimg = img.getScaledInstance( btnBoard[0][0].getWidth(), btnBoard[0][0].getHeight(),  java.awt.Image.SCALE_SMOOTH );
+                    mineIcon = new ImageIcon( newimg );
+                    img = flagIcon.getImage();
+                    newimg = img.getScaledInstance( btnBoard[0][0].getWidth(), btnBoard[0][0].getHeight(),  java.awt.Image.SCALE_SMOOTH );
+                    flagIcon = new ImageIcon(newimg);
+                } catch (Exception ex) {
+                    System.out.println("Problem with the icons");
+                    mineIcon = new ImageIcon();
+                    flagIcon = new ImageIcon();
+                }
+            }
         });
 
-        for(JButton[] rowOfButtons : board) {
+        for(JButton[] rowOfButtons : btnBoard) {
             for(JButton button: rowOfButtons) {
                 button.addMouseListener(new MouseAdapter() {
                     @Override
@@ -69,21 +90,22 @@ public class Game extends JFrame {
         }
 
         pnlInfo.add(lblMinas);
-        pnlInfo.add(lblTimer);
+        //pnlInfo.add(lblTimer);
         pnlContainer.add(pnlGame, BorderLayout.CENTER);
         pnlContainer.add(pnlInfo, BorderLayout.EAST);
         this.add(pnlContainer);
     }
 
     private void buttonRightClick(JButton button) {
-        // TODO: Só aceitar Right Clicks
         if (!button.isEnabled())
             return;
 
-        if(!button.getText().equals("F")) {
+//        if(!button.getText().equals("F")) {
+        if(button.getIcon() != flagIcon) {
             if(numMinesSelected == numMines)
                 return;
-            button.setText("F");
+            //button.setText("F");
+            button.setIcon(flagIcon);
             lblMinas.setText(++numMinesSelected + "/" + numMines + " Mines");
             try {
                 button.removeMouseListener(button.getMouseListeners()[1]);
@@ -99,7 +121,8 @@ public class Game extends JFrame {
             });
         }
         else {
-            button.setText("");
+            //button.setText("");
+            button.setIcon(null);
             lblMinas.setText(--numMinesSelected + "/" + numMines + " Mines");
             try {
                 button.removeMouseListener(button.getMouseListeners()[1]);
@@ -132,9 +155,9 @@ public class Game extends JFrame {
             return;
         }
 
-        if (!board[wid][hei].isEnabled())
+        if (!btnBoard[wid][hei].isEnabled())
             return;
-        board[wid][hei].setEnabled(false);
+        btnBoard[wid][hei].setEnabled(false);
 
         // Evaluate the output of the button clicked
         if(gameBoard[wid][hei] == false) {
@@ -159,7 +182,7 @@ public class Game extends JFrame {
                 if(getButtonByIndex(wid + 1, hei - 1) != null)
                     buttonClick(getButtonByIndex(wid + 1, hei - 1));
             } else {
-                board[wid][hei].setText(String.valueOf(minesNear(wid, hei)));
+                btnBoard[wid][hei].setText(String.valueOf(minesNear(wid, hei)));
             }
             checkWinCondition();
         } else {
@@ -175,7 +198,7 @@ public class Game extends JFrame {
     private void checkWinCondition() {
         int totalButtons = width*height;
         int disabledButtons = 0;
-        for (JButton[] row : board)
+        for (JButton[] row : btnBoard)
             for (JButton btn : row)
                 if (!btn.isEnabled())
                     disabledButtons++;
@@ -188,8 +211,8 @@ public class Game extends JFrame {
             System.out.println("It took " + timeElapsed + " seconds to finish the game!");
 
             String name = JOptionPane.showInputDialog("You WON! You made it in + " + timeElapsed + "seconds! What's your name?");
-            Pontuacao pontuacao = new Pontuacao(name, timeElapsed);
-            owner.addCompletedTime(pontuacao);
+            Pontuation pontuation = new Pontuation(name, timeElapsed);
+            owner.addCompletedTime(pontuation);
 
             disableAllButtons();
             showAllMines();
@@ -262,17 +285,17 @@ public class Game extends JFrame {
                 if(gameBoard[i][a]) {
                     // TODO: Depois tentar meter imagem em vez de "M"
                     JButton button = getButtonByIndex(i, a);
-                    if (button.getText().equals("F"))
+                    if (button.getIcon() == flagIcon)
                         button.setBackground(Color.green);
                     else
                         button.setBackground(Color.yellow);
-                    button.setText("M");
+                    button.setIcon(mineIcon);
                 }
             }
     }
 
     private JButton getButtonByIndex(int i, int a) {
-        for(JButton[] row : board)
+        for(JButton[] row : btnBoard)
             for(JButton btn : row) {
                 String[] parsedBtn = btn.getName().substring(3).split("_");
                 try {
@@ -287,7 +310,7 @@ public class Game extends JFrame {
     }
 
     private void disableAllButtons() {
-        for(JButton[] row : board)
+        for(JButton[] row : btnBoard)
             for(JButton btn : row)
                 btn.setEnabled(false);
     }
@@ -295,13 +318,13 @@ public class Game extends JFrame {
     private void generateBoard() {
         int minesGiven = 0;
         gameBoard = new boolean[width][height];
-        board = new JButton[width][height];
+        btnBoard = new JButton[width][height];
 
         // Setting ID's for the buttons
         for (int i = 0; i < width; i++)
             for (int a = 0; a < height; a++) {
-                board[i][a] = new JButton();
-                board[i][a].setName("btn" + i + "_" + a);
+                btnBoard[i][a] = new JButton();
+                btnBoard[i][a].setName("btn" + i + "_" + a);
             }
 
         // Generating Mines...
@@ -316,7 +339,7 @@ public class Game extends JFrame {
             }
         }
 
-        // Printing current board
+        // Printing current btnBoard
         for (boolean[] line : gameBoard) {
             for (boolean place : line)
                 System.out.print(place ? "-X-" : "-O-");
