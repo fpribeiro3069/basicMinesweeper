@@ -17,6 +17,7 @@ public class Game extends JFrame {
     MainMenu owner;
     long startTime;
     int width, height, numMines, numMinesSelected = 0;
+    int disabled_buttons = 0;
     boolean[][] gameBoard;
     ImageIcon mineIcon, flagIcon;
 
@@ -90,7 +91,6 @@ public class Game extends JFrame {
         }
 
         pnlInfo.add(lblMinas);
-        //pnlInfo.add(lblTimer);
         pnlContainer.add(pnlGame, BorderLayout.CENTER);
         pnlContainer.add(pnlInfo, BorderLayout.EAST);
         this.add(pnlContainer);
@@ -100,14 +100,14 @@ public class Game extends JFrame {
         if (!button.isEnabled())
             return;
 
-//        if(!button.getText().equals("F")) {
         if(button.getIcon() != flagIcon) {
             if(numMinesSelected == numMines)
                 return;
-            //button.setText("F");
+
             button.setIcon(flagIcon);
             lblMinas.setText(++numMinesSelected + "/" + numMines + " Mines");
             try {
+                // Previne que o utilizador possa clicar com o mouse esquerdo numa célula flaggada
                 button.removeMouseListener(button.getMouseListeners()[1]);
             } catch (Exception e) { /* Continue */ }
 
@@ -121,7 +121,7 @@ public class Game extends JFrame {
             });
         }
         else {
-            //button.setText("");
+            // Clicou numa célula em que já havia uma flag
             button.setIcon(null);
             lblMinas.setText(--numMinesSelected + "/" + numMines + " Mines");
             try {
@@ -158,6 +158,7 @@ public class Game extends JFrame {
         if (!btnBoard[wid][hei].isEnabled())
             return;
         btnBoard[wid][hei].setEnabled(false);
+        disabled_buttons++;
 
         // Evaluate the output of the button clicked
         if(gameBoard[wid][hei] == false) {
@@ -197,20 +198,15 @@ public class Game extends JFrame {
 
     private void checkWinCondition() {
         int totalButtons = width*height;
-        int disabledButtons = 0;
-        for (JButton[] row : btnBoard)
-            for (JButton btn : row)
-                if (!btn.isEnabled())
-                    disabledButtons++;
 
-        if (disabledButtons + numMines == totalButtons) {
+        if (disabled_buttons + numMines == totalButtons) {
             // User has won!
             long endTime = new Date().getTime();
             float timeElapsed = (float)(endTime - startTime) / 1000;
 
-            System.out.println("It took " + timeElapsed + " seconds to finish the game!");
+            //System.out.println("It took " + timeElapsed + " seconds to finish the game!");
 
-            String name = JOptionPane.showInputDialog("You WON! You made it in + " + timeElapsed + "seconds! What's your name?");
+            String name = JOptionPane.showInputDialog("You WON! You made it in " + timeElapsed + " seconds! What's your name?");
             Pontuation pontuation = new Pontuation(name, timeElapsed);
             owner.addCompletedTime(pontuation);
 
@@ -340,10 +336,10 @@ public class Game extends JFrame {
         }
 
         // Printing current btnBoard
-        for (boolean[] line : gameBoard) {
-            for (boolean place : line)
-                System.out.print(place ? "-X-" : "-O-");
-            System.out.println();
-        }
+//        for (boolean[] line : gameBoard) {
+//            for (boolean place : line)
+//                System.out.print(place ? "-X-" : "-O-");
+//            System.out.println();
+//        }
     }
 }
